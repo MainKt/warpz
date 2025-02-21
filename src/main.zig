@@ -1,6 +1,9 @@
 const std = @import("std");
 const warpz = @import("warpz");
 const clap = @import("clap");
+const config = @import("config");
+
+const semver = std.SemanticVersion.parse(config.version) catch unreachable;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -13,19 +16,18 @@ pub fn main() !void {
         \\-c, --config <str>          Use the supplied config file.
         \\-l, --list-keys             Print all valid keys.
         \\-q, --query                 Consumes a list of hints from stdin and presents a one off hint selection.
-        \\--list-options              Print all available config options.
-        \\--hint                      Start warpz in hint mode and exit after the end of the session.
-        \\--hint2                     Start warpz in two pass hint mode and exit after the end of the session.
-        \\--normal                    Start warpz in normal mode and exit after the end of the session.
-        \\--grid                      Start warpz in hint grid and exit after the end of the session.
-        \\--screen                    Start warpz in screen selection mode and exit after the end of the session.
-        \\--oneshot                   When paired with one of the mode flags, exit warpz as soon as the mode is complete (i.e don't drop into normal mode). Principally useful for scripting.
-        \\--move <usize> <usize>      Move the pointer to the specified coordinates.
-        \\--click <usize>             Send a mouse click corresponding to the supplied button and exit. May be paired with --move.
-        \\--record                    When used with --click, records the event in warpz's hint history.
+        \\    --list-options          Print all available config options.
+        \\    --hint                  Start warpz in hint mode and exit after the end of the session.
+        \\    --hint2                 Start warpz in two pass hint mode and exit after the end of the session.
+        \\    --normal                Start warpz in normal mode and exit after the end of the session.
+        \\    --grid                  Start warpz in hint grid and exit after the end of the session.
+        \\    --screen                Start warpz in screen selection mode and exit after the end of the session.
+        \\    --oneshot               When paired with one of the mode flags, exit warpz as soon as the mode is complete (i.e don't drop into normal mode). Principally useful for scripting.
+        \\    --move <str>            Move the pointer to the specified coordinates.
+        \\    --click <usize>         Send a mouse click corresponding to the supplied button and exit. May be paired with --move.
+        \\    --record                When used with --click, records the event in warpz's hint history.
         \\
     ;
-
     const params = comptime clap.parseParamsComptime(instructions);
 
     var diag = clap.Diagnostic{};
@@ -38,14 +40,9 @@ pub fn main() !void {
     };
     defer res.deinit();
 
-    if (res.args.help != 0) {
-        std.debug.print("{s}", .{instructions});
+    if (res.args.help != 0)
+        return clap.help(std.io.getStdErr().writer(), clap.Help, &params, .{});
+    if (res.args.version != 0) {
+        std.debug.print("warpz v{s}\n", .{config.version});
     }
-}
-
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
 }
